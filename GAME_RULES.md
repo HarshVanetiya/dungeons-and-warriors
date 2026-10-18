@@ -160,7 +160,41 @@ Example: a Knight (`attackScore` 9) uses Berserk (+5) and Lucky Strike together.
 
 Vampiric Edge, Thorns and Second Wind don't change the roll, so they always work alongside the others.
 
-## 8. Tech
+## 8. Accounts
+
+**Sign-up**
+- The player enters **email**, **username** and **password**. Password: at least 8 characters.
+- The username is shown on the leaderboard and in matches. Emails are never shown to other players. Usernames are unique, 3–16 characters, letters, numbers and `_`.
+- The server emails a **6-digit code**. The account can't play until the player enters that code (email verified).
+- Passwords are never stored as plain text. Only an **argon2id hash** is saved, so even if the database leaks, nobody can read passwords.
+
+**Login**
+- Email + password. Only verified accounts can log in to play. An unverified account is sent back to the "enter code" screen.
+- After 5 wrong passwords, that account can't log in for 15 minutes.
+- The login session is kept in a secure, httpOnly cookie (JWT), valid for 30 days.
+
+**Forgot password**
+1. The player enters their email. The screen always says "If an account exists, we sent a code", so nobody can use it to check who has an account.
+2. The server emails a 6-digit code.
+3. The player enters the code and a new password. Every other logged-in device is logged out.
+
+**Codes (for both email verification and forgot password)**
+- Valid for **10 minutes** and usable once.
+- Wrong code 5 times: the code is cancelled and the player must request a new one.
+- "Resend code" works at most once every 60 seconds.
+- Only a hash of the code is stored, like passwords.
+
+## 9. Art style
+
+Inspired by **Shadow Fight 3** and **God of War**: dark fantasy, heavy and cinematic. This sets the mood only. No art, characters or assets are copied from those games.
+
+- **Look:** dark, moody dungeon arenas with fog and torchlight. Heroes are detailed 2D fighters with strong silhouettes. Colours are muted, except glowing effects.
+- **Energy and powerups:** the energy meter and powerups glow with purple-black "shadow energy" smoke, like Shadow Fight 3's shadow form. Each powerup has its own glow colour (red Berserk, gold Lucky Strike, blue Iron Wall, and so on).
+- **Hits:** God of War-style weight: a short hit-stop freeze on each hit, camera shake scaled to the damage, sparks on blocks, and a different flash for counter damage.
+- **End-of-match fight scene:** the final rounds play back as a short cinematic. The KO blow is in slow motion with a zoom on the winner, then the result and Elo change appear.
+- **Hero look:** Berserker (fur, twin axes), Rogue (hood, daggers), Knight (plate armour, sword and shield), Monk (wraps, bare hands, calm stance), Guardian (huge armour, tower shield and hammer).
+
+## 10. Tech
 
 Monorepo using npm workspaces, everything in TypeScript:
 
@@ -169,14 +203,28 @@ Monorepo using npm workspaces, everything in TypeScript:
 | `packages/game` | Plain TypeScript, no framework | The rules engine: heroes, rolls, damage, energy, powerups, Elo. Pure functions with unit tests. Only the server runs it for real. The web app uses it for types and display constants. |
 | `apps/server` | Express + TypeScript + Socket.IO | Authoritative game server: matchmaking queue, turn timers, rolling, results. REST for profile and leaderboard, Socket.IO for live matches. |
 | `apps/web` | Next.js (App Router) + TypeScript | Lobby, hero select, match screen, leaderboard. |
-| Database | PostgreSQL + Prisma | Players, ratings, match history (including every round's rolls). |
+| Database | PostgreSQL + Prisma | Players, ratings, match history (including every round's rolls), login codes. |
+| Auth | Our own code in `apps/server` | argon2id password hashes, JWT session cookie, 6-digit email codes (section 8). |
+| Email | Nodemailer over SMTP | Uses Brevo's free plan (300 emails/day, no custom domain needed). Because it's plain SMTP, switching provider later only means changing settings. |
 | Animation | Framer Motion for UI, PixiJS for the fight scene | When a match ends, the server sends the full round log and the client plays a short fight cinematic of the final rounds, ending in the KO. |
 | Balance check | `tools/balance.mjs` | Run it after every change to hero stats or powerups. |
 
-## 9. Undecided
+**Hosting (free for now)**
+
+| Part | Where | Free plan limits to know |
+|---|---|---|
+| `apps/web` (Next.js) | Render, free web service | Sleeps after 15 minutes with no visitors; the first visit after that takes about a minute. |
+| `apps/server` (Express + Socket.IO) | Render, free web service | Same sleep. A restart or sleep ends any live matches. That's fine while testing; fix it before a real launch. |
+| Database | Neon, free Postgres | 0.5 GB of storage, plenty for now. Not Render's own Postgres: its free database is deleted after 30 days. |
+| Email | Brevo, free SMTP | 300 emails per day. |
+
+- **No MongoDB:** players, matches, ratings and the leaderboard are related tables, which Postgres handles better.
+- **No Redis for now:** one server can keep the matchmaking queue and turn timers in memory. Redis (Upstash has a free plan) is only needed once there's more than one server.
+- **Moving later:** Azure and GCP both offer managed Postgres. Moving the database means copying the data and changing `DATABASE_URL`; no code changes.
+
+## 11. Undecided
 
 Open questions. Move each one into the right section above once it's decided.
 
-- Login method (accounts are needed for Elo and the leaderboard).
-- Hosting and deployment.
-- Art style and hero sprites.
+- Where hero sprites and arena art come from: free asset packs (CC0, itch.io), commissioned art, or AI-generated.
+- A custom domain. Not needed for free hosting, but emails from your own domain are less likely to land in spam.
