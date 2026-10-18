@@ -171,7 +171,8 @@ Vampiric Edge, Thorns and Second Wind don't change the roll, so they always work
 **Login**
 - Email + password. Only verified accounts can log in to play. An unverified account is sent back to the "enter code" screen.
 - After 5 wrong passwords, that account can't log in for 15 minutes.
-- The login session is kept in a secure, httpOnly cookie (JWT), valid for 30 days.
+- The login session is kept in a secure, httpOnly cookie (JWT), valid for 30 days. The web app reaches the API through its own `/api` path (a Next.js rewrite to the server), so the cookie belongs to the web app's domain. Without that, browsers would block it as a third-party cookie, because Vercel and Render are different domains.
+- Live matches use Socket.IO straight to the server, since Vercel can't pass WebSockets through. To join, the web app first gets a short-lived (60-second) match token from `/api/socket-token` and sends it when connecting.
 
 **Forgot password**
 1. The player enters their email. The screen always says "If an account exists, we sent a code", so nobody can use it to check who has an account.
@@ -192,6 +193,7 @@ Inspired by **Shadow Fight 3** and **God of War**: dark fantasy, heavy and cinem
 - **Energy and powerups:** the energy meter and powerups glow with purple-black "shadow energy" smoke, like Shadow Fight 3's shadow form. Each powerup has its own glow colour (red Berserk, gold Lucky Strike, blue Iron Wall, and so on).
 - **Hits:** God of War-style weight: a short hit-stop freeze on each hit, camera shake scaled to the damage, sparks on blocks, and a different flash for counter damage.
 - **End-of-match fight scene:** the final rounds play back as a short cinematic. The KO blow is in slow motion with a zoom on the winner, then the result and Elo change appear.
+- **Made with:** AI-generated images (heroes, arenas, powerup icons), touched up so all 5 heroes share one consistent style.
 - **Hero look:** Berserker (fur, twin axes), Rogue (hood, daggers), Knight (plate armour, sword and shield), Monk (wraps, bare hands, calm stance), Guardian (huge armour, tower shield and hammer).
 
 ## 10. Tech
@@ -205,7 +207,7 @@ Monorepo using npm workspaces, everything in TypeScript:
 | `apps/web` | Next.js (App Router) + TypeScript | Lobby, hero select, match screen, leaderboard. |
 | Database | PostgreSQL + Prisma | Players, ratings, match history (including every round's rolls), login codes. |
 | Auth | Our own code in `apps/server` | argon2id password hashes, JWT session cookie, 6-digit email codes (section 8). |
-| Email | Nodemailer over SMTP | Uses Brevo's free plan (300 emails/day, no custom domain needed). Because it's plain SMTP, switching provider later only means changing settings. |
+| Email | Resend (`resend` npm package) | Sends the 6-digit codes. Kept behind one small `sendEmail()` function so the provider can be swapped later. |
 | Animation | Framer Motion for UI, PixiJS for the fight scene | When a match ends, the server sends the full round log and the client plays a short fight cinematic of the final rounds, ending in the KO. |
 | Balance check | `tools/balance.mjs` | Run it after every change to hero stats or powerups. |
 
@@ -213,10 +215,10 @@ Monorepo using npm workspaces, everything in TypeScript:
 
 | Part | Where | Free plan limits to know |
 |---|---|---|
-| `apps/web` (Next.js) | Render, free web service | Sleeps after 15 minutes with no visitors; the first visit after that takes about a minute. |
-| `apps/server` (Express + Socket.IO) | Render, free web service | Same sleep. A restart or sleep ends any live matches. That's fine while testing; fix it before a real launch. |
+| `apps/web` (Next.js) | Vercel, Hobby plan | Free, no sleeping. The Hobby plan is for non-commercial use, so move to Pro before earning money from the game. |
+| `apps/server` (Express + Socket.IO) | Render, free web service | Sleeps after 15 minutes with no requests; waking takes about a minute, so the web app shows "Waking up the server…". A restart or sleep ends any live matches. That's fine while testing; fix it before a real launch. |
 | Database | Neon, free Postgres | 0.5 GB of storage, plenty for now. Not Render's own Postgres: its free database is deleted after 30 days. |
-| Email | Brevo, free SMTP | 300 emails per day. |
+| Email | Resend, free plan | About 100 emails/day. **Until a custom domain is verified, Resend only delivers to your own Resend account email.** Testers' codes therefore appear in the server log instead (`EMAIL_MODE=log`, see `DEPLOYMENT.md`). |
 
 - **No MongoDB:** players, matches, ratings and the leaderboard are related tables, which Postgres handles better.
 - **No Redis for now:** one server can keep the matchmaking queue and turn timers in memory. Redis (Upstash has a free plan) is only needed once there's more than one server.
@@ -226,5 +228,5 @@ Monorepo using npm workspaces, everything in TypeScript:
 
 Open questions. Move each one into the right section above once it's decided.
 
-- Where hero sprites and arena art come from: free asset packs (CC0, itch.io), commissioned art, or AI-generated.
-- A custom domain. Not needed for free hosting, but emails from your own domain are less likely to land in spam.
+- Which AI image tool to use for the art, and checking that its licence allows use in a game.
+- Which custom domain to buy. That comes after testing on the free URLs; the steps are in `DEPLOYMENT.md`.
