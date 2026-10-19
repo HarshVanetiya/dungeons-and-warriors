@@ -26,22 +26,22 @@ Each hero has three stats:
 
 **Why it's fair.** Because a high defense roll hurts the attacker (section 4), attack and defense are worth about the same. So the rule of thumb is: the lower a hero's `attackScore + defenseScore`, the more HP it gets.
 
-Every matchup has been checked with `node tools/balance.mjs`. That script calculates the exact win chance under the base rules and also simulates matches with powerups:
+Every matchup has been checked with `npm run balance`. It calculates the exact win chance under the base rules, then plays 20,000 matches per matchup through the real game engine (`packages/game`), with powerups used by a simple bot:
 
 | Matchup | Base rules | With powerups |
 |---|---|---|
-| Berserker vs Rogue | 49.9% | 49.7% |
-| Berserker vs Knight | 49.3% | 49.0% |
-| Berserker vs Monk | 50.6% | 50.4% |
-| Berserker vs Guardian | 49.3% | 49.3% |
-| Rogue vs Knight | 49.8% | 48.6% |
-| Rogue vs Monk | 48.5% | 48.1% |
-| Rogue vs Guardian | 50.8% | 50.2% |
-| Knight vs Monk | 48.3% | 48.8% |
-| Knight vs Guardian | 50.5% | 50.9% |
+| Berserker vs Rogue | 49.9% | 50.1% |
+| Berserker vs Knight | 49.3% | 48.5% |
+| Berserker vs Monk | 50.6% | 50.6% |
+| Berserker vs Guardian | 49.3% | 49.9% |
+| Rogue vs Knight | 49.8% | 49.4% |
+| Rogue vs Monk | 48.5% | 47.7% |
+| Rogue vs Guardian | 50.8% | 50.4% |
+| Knight vs Monk | 48.3% | 48.3% |
+| Knight vs Guardian | 50.5% | 50.8% |
 | Monk vs Guardian | 49.0% | 49.3% |
 
-The percentage is the chance the first-named hero wins. Every matchup is within 2% of 50/50. Stat changes must keep every matchup within 3% (the script fails otherwise).
+The percentage is the chance the first-named hero wins. Every matchup is within 2.5% of 50/50. Stat changes must keep every matchup within 3%; the script and the unit tests fail otherwise.
 
 ## 3. Match and turns
 
@@ -133,7 +133,10 @@ Powerups are **personal**, not shared. The system is inspired by Shadow Fight's 
 - Powerups can be used on your attacking turn **and** on your defending turn, any time before the attacker presses Attack.
 - Each powerup is used once, then it's gone.
 - Your opponent doesn't see what you activated until the roll is shown.
-- More than one powerup can be used on the same roll.
+- More than one powerup can be used on the same roll, but not two copies of the same powerup.
+- Activating is final: an activated powerup can't be taken back.
+- To keep activations secret, the opponent's powerup count doesn't drop until the roll is shown.
+- Every effect, Second Wind's heal included, happens when the attacker presses Attack. Heals come first, then damage, then Vampiric Edge's heal.
 
 | Powerup | Use when | Effect |
 |---|---|---|
@@ -209,7 +212,7 @@ Monorepo using npm workspaces, everything in TypeScript:
 | Auth | Our own code in `apps/server` | argon2id password hashes, JWT session cookie, 6-digit email codes (section 8). |
 | Email | Resend (`resend` npm package) | Sends the 6-digit codes. Kept behind one small `sendEmail()` function so the provider can be swapped later. |
 | Animation | Framer Motion for UI, PixiJS for the fight scene | When a match ends, the server sends the full round log and the client plays a short fight cinematic of the final rounds, ending in the KO. |
-| Balance check | `tools/balance.mjs` | Run it after every change to hero stats or powerups. |
+| Balance check | `npm run balance` (`tools/balance.mjs`) | Run it after every change to hero stats or powerups. |
 
 **Hosting (free for now)**
 

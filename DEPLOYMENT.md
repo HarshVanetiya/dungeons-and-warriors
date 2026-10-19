@@ -74,7 +74,7 @@ Never commit these, and never reuse them between "test" and "real" later.
     directUrl = env("DIRECT_URL")
   }
   ```
-- Root scripts: `build:server` (builds `packages/game` then `apps/server`) and `start:server`
+- Root scripts: `build:server` (builds `packages/game` then `apps/server`) and `start:server`. These still need adding; the root `package.json` has `build`, `test`, `typecheck` and `balance` so far.
 - A `GET /health` route that returns `200 ok`
 
 ### B2. Create the web service

@@ -1,0 +1,18 @@
+{
+  "name": "dungeon-drill",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "balance": "npm run build -w @dungeon-drill/game && node tools/balance.mjs"
+  }
+}
