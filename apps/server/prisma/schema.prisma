@@ -1,0 +1,88 @@
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "esm"
+  importFileExtension    = "js"
+  generatedFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  username         String    @unique
+  passwordHash     String
+  emailVerified    Boolean   @default(false)
+  elo              Int       @default(1200)
+  wins             Int       @default(0)
+  losses           Int       @default(0)
+  draws            Int       @default(0)
+  /// Bumped on password reset so every existing session cookie stops working.
+  sessionVersion   Int       @default(0)
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  codes        EmailCode[]
+  matchesAsA   Match[]     @relation("playerA")
+  matchesAsB   Match[]     @relation("playerB")
+  matchesWon   Match[]     @relation("winner")
+
+  @@index([elo])
+}
+
+enum CodePurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+/// One active 6-digit code per user and purpose. Only an HMAC of the code is stored.
+model EmailCode {
+  id        String      @id @default(cuid())
+  userId    String
+  purpose   CodePurpose
+  codeHash  String
+  attempts  Int         @default(0)
+  expiresAt DateTime
+  sentAt    DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, purpose])
+}
+
+enum MatchResultKind {
+  KNOCKOUT
+  EXIT
+  TIMEOUT
+  DISCONNECT
+  DRAW
+}
+
+model Match {
+  id         String          @id @default(cuid())
+  playerAId  String
+  playerBId  String
+  heroA      String
+  heroB      String
+  result     MatchResultKind
+  winnerId   String?
+  eloBeforeA Int
+  eloBeforeB Int
+  /// Elo change for player A (player B got the opposite). 0 for a draw.
+  eloDeltaA  Int
+  /// Every RoundResult from the game engine, for match history and replays.
+  rounds     Json
+  startedAt  DateTime
+  endedAt    DateTime        @default(now())
+
+  playerA User  @relation("playerA", fields: [playerAId], references: [id])
+  playerB User  @relation("playerB", fields: [playerBId], references: [id])
+  winner  User? @relation("winner", fields: [winnerId], references: [id])
+
+  @@index([playerAId])
+  @@index([playerBId])
+}

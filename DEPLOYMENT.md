@@ -64,18 +64,13 @@ Never commit these, and never reuse them between "test" and "real" later.
 
 ## Part B: Deploy the backend on Render
 
-### B1. What the repo will have (for reference)
-- Root `package.json` with npm workspaces: `packages/game`, `apps/server`, `apps/web`
-- `apps/server/prisma/schema.prisma` with:
-  ```prisma
-  datasource db {
-    provider  = "postgresql"
-    url       = env("DATABASE_URL")
-    directUrl = env("DIRECT_URL")
-  }
-  ```
-- Root scripts: `build:server` (builds `packages/game` then `apps/server`) and `start:server`. These still need adding; the root `package.json` has `build`, `test`, `typecheck` and `balance` so far.
-- A `GET /health` route that returns `200 ok`
+### B1. What's in the repo (already built)
+- Root `package.json` with npm workspaces (`packages/game`, `apps/server`) and the scripts `build:server` (builds `packages/game`, then `apps/server`) and `start:server`.
+- Prisma 7. Its database URL lives in `apps/server/prisma.config.ts`, not in `schema.prisma`:
+  - migrations use `DIRECT_URL` (falling back to `DATABASE_URL`)
+  - the running server uses `DATABASE_URL` (Neon's pooled connection)
+- `GET /health` returns `200 ok` without touching the database, so health checks pass quickly while the server wakes up.
+- The server handles `SIGTERM` (sent by Render before every redeploy) by closing connections cleanly.
 
 ### B2. Create the web service
 1. Render dashboard → **New → Web Service** → pick the repo.
@@ -88,7 +83,7 @@ Never commit these, and never reuse them between "test" and "real" later.
 | Region | Same area as your Neon database |
 | Root Directory | *(leave empty: repo root, so workspaces work)* |
 | Runtime | Node |
-| Build Command | `npm ci && npm run build:server && npx prisma migrate deploy --schema apps/server/prisma/schema.prisma` |
+| Build Command | `npm ci --include=dev && npm run build:server && npm run db:deploy -w @dungeon-drill/server` |
 | Start Command | `npm run start:server` |
 | Instance Type | **Free** |
 
@@ -96,6 +91,8 @@ Never commit these, and never reuse them between "test" and "real" later.
 4. **Auto-Deploy**: On commit (every push to `main` redeploys).
 
 The migration runs in the build command because pre-deploy commands aren't on Render's free plan.
+
+`--include=dev` matters: `NODE_ENV=production` (B3) makes a plain `npm ci` skip dev dependencies, and the build needs TypeScript and the Prisma CLI.
 
 ### B3. Environment variables (Render → service → Environment)
 
