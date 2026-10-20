@@ -1,7 +1,8 @@
 import type { Server, Socket } from 'socket.io';
 import type { Sessions } from '../auth/session.js';
 import type { MatchManager } from './manager.js';
-import { ClientAction, QueueJoin, type Ack, type ClientToServer, type ServerToClient } from './protocol.js';
+import type { Ack } from '@dungeon-drill/game';
+import { ClientAction, QueueJoin, type ClientToServer, type ServerToClient } from './protocol.js';
 
 export interface SocketData {
   userId: string;

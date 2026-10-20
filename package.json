@@ -16,6 +16,8 @@
     "dev:server": "npm run build -w @dungeon-drill/game && npm run dev -w @dungeon-drill/server",
     "test": "npm run build -w @dungeon-drill/game && npm run test --workspaces --if-present",
     "typecheck": "npm run build -w @dungeon-drill/game && npm run typecheck --workspaces --if-present",
-    "balance": "npm run build -w @dungeon-drill/game && node tools/balance.mjs"
+    "balance": "npm run build -w @dungeon-drill/game && node tools/balance.mjs",
+    "dev:web": "npm run dev -w @dungeon-drill/web",
+    "build:web": "npm run build -w @dungeon-drill/web"
   }
 }

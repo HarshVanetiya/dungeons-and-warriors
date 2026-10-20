@@ -40,9 +40,19 @@ export function createServer({ config, db, email, timings = GAME_TIMINGS, rng, r
   });
 
   if (limit) {
-    // 20 tries per 15 minutes per IP, mainly so nobody can burn through the daily email quota
-    const authLimiter = rateLimit({ windowMs: 15 * 60_000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false });
-    for (const path of ['/auth/signup', '/auth/login', '/auth/resend-code', '/auth/forgot-password']) app.use(path, authLimiter);
+    // 20 tries per 15 minutes per IP on each route, mainly so nobody can burn through the daily email quota
+    for (const path of ['/auth/signup', '/auth/login', '/auth/resend-code', '/auth/forgot-password']) {
+      app.use(
+        path,
+        rateLimit({
+          windowMs: 15 * 60_000,
+          limit: 20,
+          standardHeaders: 'draft-8',
+          legacyHeaders: false,
+          message: { error: 'rateLimited' },
+        }),
+      );
+    }
   }
   app.use('/auth', authRouter({ db, sessions, codes, email }));
   app.use('/leaderboard', leaderboardRouter(db));

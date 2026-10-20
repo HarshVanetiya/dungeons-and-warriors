@@ -134,7 +134,7 @@ export function createMatch(heroes: [HeroId, HeroId], rng: Rng): { state: MatchS
     result: null,
   };
   const events: MatchEvent[] = [];
-  startTurn(state, rng, events);
+  startTurn(state, events);
   return { state, events };
 }
 
@@ -211,6 +211,9 @@ function resolveRound(state: MatchState, rng: Rng, events: MatchEvent[]): void {
   const defHero = heroOf(def);
   const healed: [number, number] = [0, 0];
 
+  // an offer still open when you press Attack is picked for you (it can't be used on this roll)
+  if (att.offer) pick(state, a, att.offer[rng.int(0, 1)]!, true, rng, events);
+
   const attackRoll = rng.int(1, attHero.attackScore);
   const defenseRoll = rng.int(1, defHero.defenseScore);
 
@@ -259,18 +262,16 @@ function resolveRound(state: MatchState, rng: Rng, events: MatchEvent[]): void {
   }
   state.round += 1;
   state.attacker = d;
-  startTurn(state, rng, events);
+  startTurn(state, events);
 }
 
-function startTurn(state: MatchState, rng: Rng, events: MatchEvent[]): void {
+function startTurn(state: MatchState, events: MatchEvent[]): void {
   const p = state.attacker;
   const player = state.players[p];
   state.drawOffer = null;
   state.canOfferDraw = player.drawCooldown === 0;
   if (player.drawCooldown > 0) player.drawCooldown -= 1;
   events.push({ type: 'turnStarted', round: state.round, attacker: p });
-  // an offer not picked by the start of your next attacking turn is picked for you
-  if (player.offer) pick(state, p, player.offer[rng.int(0, 1)]!, true, rng, events);
 }
 
 /** Deal `amount` damage to `victim`, give both players energy, and return the HP actually lost. */

@@ -121,13 +121,10 @@ Don't set `PORT`. Render sets it, and the server must listen on `process.env.POR
 
 ## Part C: Deploy the frontend on Vercel
 
-### C1. What the repo will have (for reference)
-`apps/web/next.config.ts` forwards `/api/*` to the backend:
-```ts
-async rewrites() {
-  return [{ source: '/api/:path*', destination: `${process.env.API_URL}/:path*` }];
-}
-```
+### C1. What's in the repo (already built)
+- `apps/web` is a Next.js 16 app. `next.config.ts` forwards `/api/*` to `API_URL`.
+- Its `build` script builds `packages/game` first, then runs `next build`.
+- `API_URL` and `NEXT_PUBLIC_SOCKET_URL` are baked in **when the app is built**. After changing either one, redeploy.
 
 ### C2. Import the project
 1. Vercel dashboard → **Add New → Project** → import the repo.
@@ -137,8 +134,10 @@ async rewrites() {
 |---|---|
 | Project Name | `dungeon-drill` (this becomes the URL) |
 | Framework Preset | Next.js |
-| Root Directory | `apps/web` (Vercel installs the whole workspace automatically) |
-| Build / Output / Install | leave defaults |
+| Root Directory | `apps/web` |
+| Install Command | Override: `cd ../.. && npm ci` (installs the whole workspace, including `packages/game`) |
+| Build Command | leave default (`npm run build`) |
+| Output Directory | leave default |
 
 3. **Environment Variables** (apply to Production and Preview):
 
@@ -206,7 +205,7 @@ Example domain: `dungeondrill.com`. Any registrar works (Cloudflare Registrar, N
 | Vercel | `API_URL` | `https://api.dungeondrill.com` |
 | Vercel | `NEXT_PUBLIC_SOCKET_URL` | `https://api.dungeondrill.com` |
 
-6. **Redeploy both** (Vercel needs a redeploy to pick up `NEXT_PUBLIC_` values).
+6. **Redeploy both.** Vercel needs a redeploy to pick up new `API_URL` / `NEXT_PUBLIC_SOCKET_URL` values.
 7. **Run the testing checklist again**, now with a friend's real email to confirm codes reach anyone.
 
 Now the frontend and API share one domain, so the `/api` rewrite is optional, but keep it. It still works and means no code change.

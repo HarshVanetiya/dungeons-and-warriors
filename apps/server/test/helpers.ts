@@ -92,7 +92,8 @@ export async function player(server: TestServer, user: { id: string; sessionVers
   });
 
   const emit = (event: 'queue:join' | 'match:action', payload: unknown) =>
-    new Promise<{ ok: boolean; error?: string }>((resolve) => socket.emit(event, payload, resolve));
+    // untyped on purpose: tests also send invalid payloads
+    new Promise<{ ok: boolean; error?: string }>((resolve) => (socket as unknown as Socket).emit(event, payload, resolve));
 
   return {
     socket,

@@ -61,7 +61,7 @@ The web app calls these through its own `/api/...` path (a Next.js rewrite), so 
 
 `user` is `{ id, email, username, elo, wins, losses, draws }`.
 
-Sign-up, login, resend-code and forgot-password allow 20 requests per 15 minutes per IP.
+Sign-up, login, resend-code and forgot-password each allow 20 requests per 15 minutes per IP. Past that they answer `429 { error: "rateLimited" }`.
 
 ## Socket.IO protocol
 

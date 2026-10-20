@@ -5,3 +5,4 @@ export * from './elo.js';
 export * from './match.js';
 export * from './view.js';
 export * from './balance.js';
+export * from './protocol.js';

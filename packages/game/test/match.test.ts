@@ -203,15 +203,24 @@ describe('earning powerups', () => {
     expect(applyAction(state, { type: 'pickPowerup', player: KNIGHT, powerup: 'thorns' }, scriptedRng([]))).toEqual({ ok: false, error: 'noPowerupOffer' });
   });
 
-  it('picks at random if the player has not chosen by their next attacking turn', () => {
-    const s = tweak(knightVsMonk(), (s) => {
+  it('keeps an offer open for the whole next turn, earned while defending or attacking', () => {
+    // Monk attacks and the Knight's meter fills while defending: the offer must still be open on the Knight's turn
+    let s = tweak(knightVsMonk(), (s) => {
       s.attacker = MONK;
-      s.players[KNIGHT].offer = ['berserk', 'thorns'];
+      s.players[KNIGHT].energy = 95;
     });
-    // Monk attacks for 0 damage, then the Knight's turn starts and the offer is resolved with index 1
-    const { state, events } = act(s, { type: 'attack', player: MONK }, [1, 1, 1]);
+    s = act(s, { type: 'attack', player: MONK }, [7, 2, 0, 2]).state; // 5 damage to the Knight, offer berserk/vampiricEdge
+    expect(s.attacker).toBe(KNIGHT);
+    expect(s.players[KNIGHT].offer).toEqual(['berserk', 'vampiricEdge']);
+  });
+
+  it('picks at random if the offer is still open when the player attacks', () => {
+    const s = tweak(knightVsMonk(), (s) => (s.players[KNIGHT].offer = ['berserk', 'thorns']));
+    // index 1 is picked first, then the dice are rolled; it can't be used on this roll
+    const { state, events } = act(s, { type: 'attack', player: KNIGHT }, [1, 1, 1]);
     expect(state.players[KNIGHT]).toMatchObject({ held: ['thorns'], offer: null });
     expect(events).toContainEqual({ type: 'powerupPicked', player: KNIGHT, powerup: 'thorns', auto: true });
+    expect(lastRound(state).attackerPowerups).toEqual([]);
   });
 
   it(`holds at most ${MAX_HELD_POWERUPS}; the meter waits at 100 until a slot frees up`, () => {

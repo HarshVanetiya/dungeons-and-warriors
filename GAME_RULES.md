@@ -125,7 +125,7 @@ Powerups are **personal**, not shared. The system is inspired by Shadow Fight's 
 
 **Earning a powerup**
 - When the meter reaches 100, it drops by 100 (leftover energy carries over), and the player is offered **2 different random powerups** and keeps **1**.
-- If they haven't picked one by the start of their next attacking turn, the server picks one of the two at random.
+- The offer stays open until they pick. If it's still open when they press Attack, the server picks one of the two at random first. It goes into their slots and can't be used on that roll. So there's always at least a full turn to choose, even when the meter fills while defending.
 - A player can hold at most **2** powerups. While both slots are full, the meter stays at 100. The next offer appears as soon as a slot frees up.
 - The opponent can see **how many** powerups you hold, but not **which** ones.
 

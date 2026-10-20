@@ -2,7 +2,8 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { CODE_MAX_ATTEMPTS } from '../src/auth/codes.js';
 import { LOGIN_MAX_FAILURES } from '../src/auth/routes.js';
-import { createUser, hasDb, resetDb, startServer, testDb, type TestServer } from './helpers.js';
+import { createServer } from '../src/app.js';
+import { createUser, hasDb, resetDb, startServer, testConfig, testDb, type TestServer } from './helpers.js';
 
 const EMAIL = 'hero@example.com';
 const PASSWORD = 'correct horse';
@@ -194,5 +195,19 @@ describe.skipIf(!hasDb)('auth', () => {
 
   it('answers /health', async () => {
     await agent().get('/health').expect(200, 'ok');
+  });
+});
+
+describe.skipIf(!hasDb)('rate limit', () => {
+  it('limits each email-sending route separately and answers with JSON', async () => {
+    const limited = createServer({ config: testConfig, db: testDb(), email: { send: async () => {} } });
+    try {
+      for (let i = 0; i < 20; i++) await request(limited.app).post('/auth/forgot-password').send({ email: 'a@example.com' }).expect(200);
+      await request(limited.app).post('/auth/forgot-password').send({ email: 'a@example.com' }).expect(429, { error: 'rateLimited' });
+      // a different route still has its own allowance
+      await request(limited.app).post('/auth/login').send({ email: 'a@example.com', password: 'whatever1' }).expect(401);
+    } finally {
+      limited.io.close();
+    }
   });
 });

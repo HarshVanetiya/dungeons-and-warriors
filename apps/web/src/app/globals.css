@@ -1,0 +1,71 @@
+@import 'tailwindcss';
+
+/* Dark fantasy theme (GAME_RULES.md section 9). The game is dark-only by design. */
+@theme {
+  --color-void: #07060a;
+  --color-stone-950: #0d0b12;
+  --color-stone-900: #14111b;
+  --color-stone-800: #1d1926;
+  --color-stone-700: #2a2534;
+  --color-stone-600: #3a3446;
+  --color-ash: #9b93a8;
+  --color-bone: #ebe5d9;
+  --color-shadow: #8b5cf6;
+  --color-shadow-bright: #b794ff;
+  --color-blood: #dc2626;
+  --color-ember: #f97316;
+  --color-gold: #d9b45a;
+  --color-heal: #2dd4bf;
+
+  --font-display: var(--font-cinzel), ui-serif, Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-void);
+  color: var(--color-bone);
+}
+
+body {
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgb(139 92 246 / 0.12), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 110%, rgb(249 115 22 / 0.07), transparent 70%),
+    var(--color-void);
+  background-attachment: fixed;
+}
+
+/* Torch-lit panel used across the app */
+@utility panel {
+  background: linear-gradient(180deg, rgb(29 25 38 / 0.92), rgb(20 17 27 / 0.92));
+  border: 1px solid var(--color-stone-700);
+  border-radius: 0.75rem;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.04) inset,
+    0 10px 30px -10px rgb(0 0 0 / 0.8);
+}
+
+@utility shadow-glow {
+  box-shadow:
+    0 0 0 1px rgb(139 92 246 / 0.5),
+    0 0 18px rgb(139 92 246 / 0.45);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-shadow-bright);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
