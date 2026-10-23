@@ -2,6 +2,8 @@
 
 A 1v1 online dice-duel. Pick one of five balanced heroes, out-roll your opponent's guard, and climb the Elo leaderboard.
 
+> **How this was built:** written with [Claude Code](https://claude.com/claude-code), Anthropic's AI coding agent, working from my requirements.
+
 | Doc | What's in it |
 |---|---|
 | [`GAME_RULES.md`](GAME_RULES.md) | Every rule of the game. The single source of truth. |
